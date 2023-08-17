@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="module">
+import { body, c, frag, key, hook, on } from '../src/dom.js';
+
+let v = true;
+body( () => v ?
+  frag(
+    key`a`,
+    hook.destroy(() => console.log('destroy a')),
+    c(1, on.click(() => { v = !v; body.refresh(); })),
+    c(2),
+  ) :
+  frag(
+    key`b`,
+    hook.destroy(() => console.log('destroy b')),
+    c(3, on.click(() => { v = !v; body.refresh(); })),
+    c(4),  
+  ),
+);
+</script>

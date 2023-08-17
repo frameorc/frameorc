@@ -1,0 +1,21 @@
+<!doctype html>
+<script type="module">
+  import { body, c, css, attr, Val } from './lib/dom.js';
+  import { RpcClient } from './lib/rpc/client.js';
+  import { Chain } from './lib/chain.js';
+  
+  let status = Val('disconnected'), res = Val();
+  body(
+    c.H1`frameorc`,
+    c.P`Hello`,
+    c.P(status),
+    res,
+  );
+  
+  let conn = RpcClient('/api');
+  conn.isOpen
+    .on(status)
+    .on(async s => { s && await conn.call('sid', 12345); });
+  // conn.connect();
+  res(JSON.stringify(await conn.call('plus', 2, 3)));
+</script>

@@ -1,0 +1,63 @@
+<style>
+  /* NB. this class and .keypad in the component do not interfere */
+  .keypad { display: inline-block; }
+</style>
+
+<div class="keypad" id="keypad1"></div>
+<div class="keypad" id="keypad2"></div>
+
+<script type="module">
+import { attach, c, on, css, attr, key, prop, cls, hook } from '../src/dom.js';
+
+function Keypad(el) {
+  const body = attach(el.attachShadow({ mode: 'open' })),
+        Val = body.Val;
+  const v = Val(0)
+    .on(value => console.log('Current value is', value))
+    .on(value => el.setAttribute('value', value));
+  body(
+   c.Style`
+     .keypad {
+       display: grid;
+       gap: 5px;
+       grid-template-columns: repeat(3, 3em);
+       grid-template-rows: repeat(5, 3em);
+     }
+     .display {
+       grid-row: 1;
+       grid-column: 1 / 4;
+       border: solid black 1px;
+       padding: 5px;
+       text-align: right;
+     }
+     .even { color: darkgreen; }
+     .odd { color: maroon; }  
+   `,
+   c.H2`Keypad example`,
+   c.keypad(
+     c.Button(
+       'C',
+       on.click(() => v(0)),
+       css.color`red`.fontWeight`bold`),
+     c.Button(
+       '-',
+       on.click(() => v(-v()))),
+     Array.from({ length: 10 }, (_, i) =>
+       c.Button(
+         i,
+         attr.type`button`,
+         key('bn', i),
+         on.click(() => v(10*v() + i)))),
+     c.Input.display(
+       hook.insert((el) => el.elm.focus()),
+       prop.value(v),
+       cls.odd(() => v() % 2),
+       cls.even(() => !(v() % 2)),
+       on.input(e => v(Number(e.target.value) || 0)))),
+  );
+}
+
+Keypad(keypad1);
+Keypad(keypad2);
+</script>
+

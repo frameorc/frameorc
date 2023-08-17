@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flex CSS</title>
+<script type="module">
+const omit = new Set([
+  'flex-direction: row',
+  'justify-content: start',
+  'align-items: stretch',
+]);
+
+const HA = 'l|c|r|s|_a|_b|_e'.split('|');
+const VA = 't|m|b|s|_a|_b|_e|bf|bl'.split('|');
+
+function gen() {
+  const spaces = {
+    _a: 'space-around',
+    _b: 'space-between',
+    _e: 'space-evenly',
+  };
+  const horizontal = { l: 'start', c: 'center', r: 'end', s: 'stretch' };
+  const vertical = { t: 'start', m: 'center', b: 'end', s: 'stretch' };
+  const alignItems = {
+    h: { ...vertical, bf: 'first baseline', bl: 'last baseline' },
+    v: { ...horizontal },
+  };
+  const justifyContent = {
+    h: { ...horizontal, ...spaces },
+    v: { ...vertical, ...spaces },
+  };
+  const HA = 'l|c|r|s|_a|_b|_e'.split('|');
+  const VA = 't|m|b|s|_a|_b|_e|bf|bl'.split('|');
+  let classes = {}, ai, jc;
+  // `o` for orientation, `ha` for horizontal alignment, `va` for vertical
+  for (const o of 'h|v'.split('|'))
+    for (const ha of HA)
+      for (const va of VA)
+        if ((ai = alignItems[o][o === 'h' ? va : ha])
+         && (jc = justifyContent[o][o === 'h' ? ha : va]))
+          classes[o + ha + va] = {
+            display: 'flex',
+            'flex-direction': o === 'h' ? 'row' : 'column',
+            'align-items': ai,
+            'justify-content': jc,
+          };
+  return classes;
+}
+
+function group(classes) {
+  let groups = {};
+  Object.entries(classes).forEach(([className, props]) =>
+    Object.entries(props).forEach(([propName, propValue]) =>
+      (groups[propName + ': ' + propValue] ??= []).push(className)));
+  return groups;
+}
+
+function typeset(x) {
+  let res = '', pos = 0;
+  for (let piece of x.split(/[ ]+/gm)) {
+    if (res.length) res += (res.length + piece.length - pos > 79) ? '\n' : ' ';
+    res += piece;
+    pos = res.lastIndexOf('\n');
+    if (pos === -1) pos = 0;
+  }
+  return res;
+}
+
+const CSS_CLS = Object.entries(group(gen()))
+  .filter(([k, v]) => !omit.has(k))
+  .map(([k, v]) =>
+    k === 'justify-content: stretch'
+    ? v.map(k => '.'+k+' > *').join(', ') + '\n{ flex: auto; }'
+    : v.map(k => '.'+k).join(', ') + '\n{ ' + k + '; }')
+  .join('\n\n');
+const CSS_FWR = `.fwr { flex-wrap: wrap; }`;
+const CSS_FL = `\
+.fl1 { flex: 1; }
+.fl2 { flex: 2; }
+.fl3 { flex: 3; }
+.fl4 { flex: 4; }
+.fl5 { flex: 5; }
+.fs0 { flex-shrink: 0; flex-basis: fit-content; }`;
+const CSS = typeset(CSS_CLS) + '\n\n' + CSS_FWR + '\n' + CSS_FL;
+
+import { body, c, css, cls, attr } from 'https://frameorc.github.io/src/dom.js';
+
+const KEY = c.Code;
+const CODE = x => c.Pre(c.Code(x));
+const listing = (f, from=1, to=-2) => c.P(CODE(
+  f.toString().split('\n')
+   .slice(from, to).map(s => s.slice(2))
+   .join('\n')));
+   
+const DEMO_CELL = Array(3).fill(c.sq);
+
+body(
+  css.maxWidth`75ch`.margin`1em auto`.padding`1em`
+     .font`normal 400 14px/1.33 "Ubuntu Mono", monospace`,
+  c.Style`
+    code {
+      background: #ccc; padding: 2px; font-family: "Ubuntu Mono", monospace;
+    }
+    pre { padding: 1ch; background: #ccc; overflow: auto; }
+    pre > code { padding: 0; background: unset; }
+    .strike {
+      text-decoration: line-through;
+    }
+    .gray { display: inline; color: #ccc; }
+  `,
+  c.H1`Flex CSS`,
+
+  c.H2`Synopsis`,
+  c.P`\
+    Flex CSS is a library that allows you to create a system of nested, well
+    aligned blocks in a few keystrokes.`,
+
+  c.H2`Usage`,
+  c.P`\
+    Include flex.css in your stylesheets in the usual way.`,
+
+  c.H2`Syntax`,
+  c.P`\
+    The library provides class names formed from the three parts: orientation,
+    horizontal alignment and vertical alignment, where orientation is either
+    ${KEY`h`} for a horizontal row or ${KEY`v`} for a vertical column of
+    elements.`,
+  c.P`\
+    Horizontal alignment is one of the letters ${KEY`l|c|r`} (left/centre/right),
+    and vertical alignment is either of ${KEY`t|m|b`} (top/middle/bottom).`,
+  c.P`\
+    In addition, instead of being pushed to the
+    side, elements can stretch. Let the letter ${KEY`s`} be
+    used to express that. For example, ${KEY`.hss`} class is a horizontal row
+    where elements stretch both vertically and horizontally to occupy all the
+    available space.`,
+  c.P`\
+    There are other ways to distribute the unoccupied space: between
+    the elements, around the elements and evenly. Let ${KEY`_b`} stand for
+    "space between", ${KEY`_a`} for "space around" and ${KEY`_e`} for
+    "space evenly". These must work for any orientation, e.g. ${KEY`.vl_a`} is
+    a vertical column where the spare vertical space is distributed around the
+    elements, and horizontally they are aligned to the left. Another example: ${KEY`.h_as`}: a horizontal
+    row with spare horizontal space distributed around the elements that are
+    stretched vertically.`,
+  c.P`\
+    A unique type of vertical alignment in a horizontal row is
+    by the baseline. If can be by the first or by the last baseline. ${KEY`bf`}
+    and ${KEY`bl`} will stand for that, accordingly. ${KEY`.hlbl`} is a
+    horizontal row where the items are aligned left and by their last baseline.`,
+  c.P`\
+    The resulting complete grammar is:${c.Br}
+    ${KEY`(h|v) × (l|c|r|s|_a|_b|_e) × (t|m|b|s|_a|_b|_e|bf|bl)`}.`,
+  c.P`\
+    That initially produces 2×7×9 = 126 combinations.
+    However, baseline vertical alignment is only applicable for horizontal rows.
+    Thus, 1×7×2 combinations less, only 112 variants are left. Then, _a|_b|_e
+    alignment makes sense only on the main axis, making it 2×7×3 = 42 less, down
+    to 70.`,
+
+  c.H2`Demo`(attr.id`demo`),
+  c.Style`
+    table.demo { display: inline-table; border-collapse: collapse; margin: 5px; }
+    table.demo td, table.demo th { border: solid 1px #ccc; }
+    table.demo th { padding: 5px; }
+    table.demo td > div {
+      box-sizing: border-box;
+      height: 36px; width: 36px;
+    }
+    .sq {
+      display: block;
+      box-sizing: border-box;
+      min-height: 4px; min-width: 4px; margin: 1px;
+      background-color: #000;
+    }
+    ${ CSS }
+  `,
+  c.Table.demo(
+    c.Tr(c.Th('h'), HA.map(ha => c.Th(ha))),
+    VA.filter(va => !va.startsWith('_')).map(va =>
+      c.Tr(c.Th(va), HA.map(ha => c.Td(c['h'+ha+va](DEMO_CELL))))),
+  ),
+  c.Table.demo(
+    c.Tr(c.Th('v'), HA.filter(ha => !ha.startsWith('_')).map(ha => c.Th(ha))),
+    VA.filter(va => va !== 'bl' && va !== 'bf').map(va =>
+      c.Tr(
+        c.Th(va),
+        HA.filter(ha => !ha.startsWith('_'))
+          .map(ha => c.Td(c['v'+ha+va](DEMO_CELL))))),
+  ),
+  c.P(
+    c.A(
+      attr.href`data:text/css;base64,${btoa(CSS)}`,
+      attr.download`flex.css`,
+      `Download (generated)`),
+  ),
+
+  c.H2`Additions`,
+  c.P`\
+    Some useful additions: a class that makes the
+    children of the container wrap into the next line or column, if all the 
+    along the main axis has been taken: ${CODE(CSS_FWR)}
+    Another case is the classes that define the proportion in which an
+    individual element can grow or shrink: ${CODE(CSS_FL)}
+  `,
+);
+</script>

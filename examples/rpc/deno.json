@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "start": "deno run --unstable --allow-net=127.0.0.1:8080 --allow-read=. ./deno.js",
+    "express": "deno run --node-modules-dir=true --unstable --allow-net=127.0.0.1:8080 --allow-env --allow-read=.,node_modules --no-prompt ./express.js",
+  }
+}

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="module">
+const omit = new Set([
+  'flex-direction: row',
+  'justify-content: start',
+  'align-items: stretch',
+]);
+
+const HA = 'l|c|r|s|_a|_b|_e'.split('|');
+const VA = 't|m|b|s|_a|_b|_e|bf|bl'.split('|');
+
+function gen() {
+  const spaces = {
+    _a: 'space-around',
+    _b: 'space-between',
+    _e: 'space-evenly',
+  };
+  const horizontal = { l: 'start', c: 'center', r: 'end', s: 'stretch' };
+  const vertical = { t: 'start', m: 'center', b: 'end', s: 'stretch' };
+  const alignItems = {
+    h: { ...vertical, bf: 'first baseline', bl: 'last baseline' },
+    v: { ...horizontal },
+  };
+  const justifyContent = {
+    h: { ...horizontal, ...spaces },
+    v: { ...vertical, ...spaces },
+  };
+  const HA = 'l|c|r|s|_a|_b|_e'.split('|');
+  const VA = 't|m|b|s|_a|_b|_e|bf|bl'.split('|');
+  let classes = {}, ai, jc;
+  // `o` for orientation, `ha` for horizontal alignment, `va` for vertical
+  for (const o of 'h|v'.split('|'))
+    for (const ha of HA)
+      for (const va of VA)
+        if ((ai = alignItems[o][o === 'h' ? va : ha])
+         && (jc = justifyContent[o][o === 'h' ? ha : va]))
+          classes[o + ha + va] = {
+            display: 'flex',
+            'flex-direction': o === 'h' ? 'row' : 'column',
+            'align-items': ai,
+            'justify-content': jc,
+          };
+  return classes;
+}
+
+function group(classes) {
+  let groups = {};
+  Object.entries(classes).forEach(([className, props]) =>
+    Object.entries(props).forEach(([propName, propValue]) =>
+      (groups[propName + ': ' + propValue] ??= []).push(className)));
+  return groups;
+}
+
+function typeset(x) {
+  let res = '', pos = 0;
+  for (let piece of x.split(/[ ]+/gm)) {
+    if (res.length) res += (res.length + piece.length - pos > 79) ? '\n' : ' ';
+    res += piece;
+    pos = res.lastIndexOf('\n');
+    if (pos === -1) pos = 0;
+  }
+  return res;
+}
+
+const CSS_CLS = Object.entries(group(gen()))
+  .filter(([k, v]) => !omit.has(k))
+  .map(([k, v]) =>
+    k === 'justify-content: stretch'
+    ? v.map(k => '.'+k+' > *').join(', ') + '\n{ flex: auto; }'
+    : v.map(k => '.'+k).join(', ') + '\n{ ' + k + '; }')
+  .join('\n\n');
+const CSS_FWR = `.fwr { flex-wrap: wrap; }`;
+const CSS_FL = `\
+.fl1 { flex: 1; }
+.fl2 { flex: 2; }
+.fl3 { flex: 3; }
+.fl4 { flex: 4; }
+.fl5 { flex: 5; }
+.fs0 { flex-shrink: 0; flex-basis: fit-content; }`;
+const CSS = typeset(CSS_CLS) + '\n\n' + CSS_FWR + '\n' + CSS_FL;
+
+import { body, c, css, cls, attr } from 'https://frameorc.github.io/src/dom.js';
+
+const KEY = c.Code;
+const CODE = x => c.Pre(c.Code(x));
+const listing = (f, from=1, to=-2) => c.P(CODE(
+  f.toString().split('\n')
+   .slice(from, to).map(s => s.slice(2))
+   .join('\n')));
+   
+const DEMO_CELL = Array(3).fill(c.sq);
+
+body(
+  css.maxWidth`75ch`.margin`1em auto`.padding`1em`
+     .font`normal 400 14px/1.33 "Ubuntu Mono", monospace`,
+  c.Style`
+    code {
+      background: #ccc; padding: 2px; font-family: "Ubuntu Mono", monospace;
+    }
+    pre { padding: 1ch; background: #ccc; overflow: auto; }
+    pre > code { padding: 0; background: unset; }
+    .strike {
+      text-decoration: line-through;
+    }
+    .gray { display: inline; color: #ccc; }
+  `,
+  c.H1`Flex CSS`,
+  c.P(
+    'No time to ', c.gray`read how it's `, 'explain', c.gray`ed`, ': ',
+    c.A(attr.href`#demo`)`Demo`, ' / ',
+    c.A(attr.href`flex.css`)`Download link`),
+  c.H2`Motivation`,
+  c.H3`The problem`,
+  c.P`\
+    Once upon a time, I needed to create a complex layout. Soon I have realised
+    that this layout will consist of several levels of embedded blocks arranged
+    either in rows or columns, and are aligned horizontally and vertically in
+    one of the ways vector drawing programs allow you to align selected
+    elements.`,
+  c.P`\
+    Having realised that, I started imagining a graphical program that would
+    allow me to add nested blocks and choose their alignment with switches on
+    the side panel.`,
+  c.P`\
+    Next, I thought, I would add keyboard shortcuts to this program, as it is
+    faster for me to click the block and press a key on the keyboard, rather
+    than move the mouse to the side panel, click the corresponding button and
+    move the mouse back. It may look as if I am overly dramatising such a
+    trivial action, but anyone who has done it thousands of times per day knows
+    that automating such things may save you literally half of a working time.`,
+  c.P`\
+    So, as I press those keys, blocks would change their alignment and
+    orientation. What keys would that be? When I press ${KEY`H`}, all children
+    of the block will immediately be arranged horizontally. If I press ${KEY`V`},
+    the block will instantly transform to a vertical column. Time saved from
+    extra mouse movements, selecting and clicking.`,
+  c.P`\
+    So far, so good. How will I align the elements? If I press ${KEY`L`} on the 
+    selected block, all its children will be aligned to the left. ${KEY`R`} is
+    for right, ${KEY`C`} for centre.`,
+  c.P`\
+    At the same time, I can also choose the vertical alignment: ${KEY`T`} for
+    top, ${KEY`B`} for bottom and ${KEY`M`} for middle. It is good that there
+    exists another word and another letter for the vertical centre, "middle".`,
+  c.H3`Thinking further`,
+  c.P`\
+    Should I start an endeavour of writing a graphical block-aligning program?
+    It seems to be a terrific idea for the start-up. Everyone needs that. 
+    Everyone will love it. I will become famous and will earn billions of
+    dollars on subscriptions! Awesome!`,
+  c.P`\
+    However, after giving that thought another 1.5 minutes of time, I came to
+    the conclusion that it would indeed be awesome in the correct meaning of the
+    word, also woeful, horrible and wrong on so many levels. I will elaborate no
+    longer what abyss opened before me, as there is not enough space and
+    time to even start approaching its due description.`,
+  c.P`\
+    Having quickly regained my sanity, I concentrated on the outcome. If the
+    above program had been written, what would its material result be?
+    In a technical sense, it would always be a file which contains the layout,
+    which, in any case, must be obtained from the program, and the content,
+    developed elsewhere, somehow incorporated into the layout. Would it be much
+    better if the content is authored in its normal environment (that's
+    presumably a code editor), and the layout in some way created in the same
+    place, by pressing the same keys mentioned above?`,
+  c.P`\
+    The next realisation was that a decent syntax to express structural
+    relationships between elements is well known. Let's say, ${KEY`element1`},
+    ${KEY`element2`} and ${KEY`element3`} are given. If element3 follows
+    element2, there is already a widely accepted convention on how to show that: 
+    ${KEY`element2, element3`}. If they are the children of element1, it is
+    simple and widely recognisable to express that as
+    ${KEY`element1(element2, element3)`}. Such relationships can be extended
+    arbitrarily far: as many elements following each other as needed, and as
+    many levels of parent-child hierarchy can be expressed in the above syntax.`,
+  c.P`\
+    Of course, since this is about the construction of a DOM structure, possibly
+    via HTML, this all is obvious, but I find it useful to go back to the
+    fundamentals, as it helps to see the possibilities which are not always
+    obvious if one is overwhelmed with all the implementation details.`,
+  c.P`\
+    Talking about implementation details, if this is related to HTML, it has
+    classes, and if I create a class with its name consisting of three letters:
+    orientation, horizontal alignment and vertical alignment, and define it
+    accordingly, the goal is achieved. For example,
+    ${KEY`div.${c.B`hlm`}(el1, el2, el3)`}: ${c.B`h`}orizontal container with
+    children aligned ${c.B`l`}eft horizontally and to the ${c.B`m`}iddle
+    vertically.`,
+  c.P`\
+    The same result, just by pressing the same three-key chord on the keyboard,
+    getting the structure formed as quickly as possible and all that without
+    leaving your favourite text editor. ${c.S`Awesome!`}`,
+  c.H2`Details`,
+  c.P`\
+    Following the discussion above, class names should be formed
+    from the three parts: orientation,
+    horizontal alignment and vertical alignment, where orientation is either
+    ${KEY`h`} for a horizontal row or ${KEY`v`} for a vertical column of
+    elements.`,
+  c.P`\
+    Horizontal alignment is one of the letters ${KEY`l|c|r`} (left/centre/right),
+    and vertical alignment is either of ${KEY`t|m|b`} (top/middle/bottom).`,
+  c.P`\
+    Let's add some useful options. First of all, instead of being pushed to the
+    side, elements can stretch. Let the letter ${KEY`s`} be
+    used to express that. For example, ${KEY`.hss`} class is a horizontal row
+    where elements stretch both vertically and horizontally to occupy all the
+    available space.`,
+  c.P`\
+    Secondly, there are other ways to distribute the unoccupied space: between
+    the elements, around the elements and evenly. Let ${KEY`_b`} stand for
+    "space between", ${KEY`_a`} for "space around" and ${KEY`_e`} for
+    "space evenly". These must work for any orientation, e.g. ${KEY`.vl_a`} is
+    a vertical column where the spare vertical space is distributed around the
+    elements, and horizontally they are aligned to the left. Another example:
+    ${KEY`.h_as`}: a horizontal row with spare horizontal space distributed
+    around the elements that are stretched vertically.`,
+  c.P`\
+    In third, there is a unique type of vertical alignment in a horizontal row:
+    by the baseline. If can be by the first or by the last baseline. ${KEY`bf`}
+    and ${KEY`bl`} will stand for that, accordingly. ${KEY`.hlbl`} is a
+    horizontal row where the items are aligned left and by their last baseline.`,
+  c.P`\
+    The resulting complete grammar is:${c.Br}
+    ${KEY`(h|v) × (l|c|r|s|_a|_b|_e) × (t|m|b|s|_a|_b|_e|bf|bl)`}.`,
+  c.P`\
+    That initially produces 2×7×9 = 126 combinations.
+    However, baseline vertical alignment is only applicable for horizontal rows.
+    Thus, 1×7×2 combinations less, only 112 variants are left. Then, _a|_b|_e
+    alignment makes sense only on the main axis, making it 2×7×3 = 42 less, down
+    to 70.`,
+  c.H2`Coding`,
+  c.P`\
+    It is simple to generate all these combinations by running three nested 
+    ${KEY`for`} loops, and filtering only for those combinations that it makes
+    sense to define (see below):`,
+  listing(gen, 16),
+  (() => {
+    let keys = Object.keys(gen());
+    return `classes[${keys.length}] = ${keys.map(k => '.'+k).join(', ')}`;
+  })(),
+  c.P`\
+    The information about alignment and justifying is taken from two-level
+    dictionaries, which I have defined as follows:`,
+  listing(gen, 1, 16),
+  c.P`
+    However, it can do better than emitting a large CSS file made of full class
+    definitions. Let's make groups of classes that have similar properties.
+  `,
+  listing(group),
+  c.Details(
+    c.Summary`This way the listing becomes compact. (Click to expand)`,
+    Object.entries(group(gen())).map(([k, v]) =>
+      c.P(
+        cls.strike(omit.has(k)),
+        v.map(k => '.'+k).join(', '), ' { ', c.B(k), '; }'))
+  ),
+  c.P`\
+    Since some properties have default values, they can be omitted and the
+    resulting CSS will get more compact. In the above listing such styles
+    were struck off.
+  `,
+  c.P`
+    Care must also be taken about the special case of stretching by the
+    cross-axis. By default, ${KEY`justify-content: stretch`}
+    will apply only to auto-sized elements. I find it more reliable when the
+    software does what I tell it to do. Therefore, instead of relying on
+    whatever CSS spec authors thought in this case, I will redefine the
+    behaviour of that style to stretch the elements as intended.
+  `,
+  c.P`
+    To fix that, I have replaced ${KEY`.class { justify-content: stretch; }`} 
+    rules with ${KEY`.class > * { flex: auto; }`}. 
+  `,
+  c.H2`Demo`(attr.id`demo`),
+  c.Style`
+    table.demo { display: inline-table; border-collapse: collapse; margin: 5px; }
+    table.demo td, table.demo th { border: solid 1px #ccc; }
+    table.demo th { padding: 5px; }
+    table.demo td > div {
+      box-sizing: border-box;
+      height: 36px; width: 36px;
+    }
+    .sq {
+      display: block;
+      box-sizing: border-box;
+      min-height: 4px; min-width: 4px; margin: 1px;
+      background-color: #000;
+    }
+    ${ CSS }
+  `,
+  c.Table.demo(
+    c.Tr(c.Th('h'), HA.map(ha => c.Th(ha))),
+    VA.filter(va => !va.startsWith('_')).map(va =>
+      c.Tr(c.Th(va), HA.map(ha => c.Td(c['h'+ha+va](DEMO_CELL))))),
+  ),
+  c.Table.demo(
+    c.Tr(c.Th('v'), HA.filter(ha => !ha.startsWith('_')).map(ha => c.Th(ha))),
+    VA.filter(va => va !== 'bl' && va !== 'bf').map(va =>
+      c.Tr(
+        c.Th(va),
+        HA.filter(ha => !ha.startsWith('_'))
+          .map(ha => c.Td(c['v'+ha+va](DEMO_CELL))))),
+  ),
+  c.P(
+    c.A(
+      attr.href`data:text/css;base64,${btoa(CSS)}`,
+      attr.download`flex.css`,
+      `Download (generated)`),
+  ),
+  c.H2`Additions`,
+  c.P`\
+    Some useful additions come to mind. For example, a class that makes the
+    children of the container wrap into the next line or column, if all the 
+    along the main axis has been taken: ${CODE(CSS_FWR)}
+    Another case is the classes that define the proportion in which an
+    individual element can grow or shrink: ${CODE(CSS_FL)}
+  `,
+  c.H2`Conclusion`,
+  c.P`\
+    Just as we, developers, developers, developers, developers, after a long
+    wait, were gracefully endowed with bliss of using flex CSS rules, and not
+    coding anymore user interfaces in ways similar to digging trenches with
+    toothpicks, by our merciful standards bodies and browser vendors, it took me
+    about 40 minutes to implement this system, which then has been serving me
+    well for many years. To present this idea to the general public and write
+    this article, it took me over two days, after I finally made up my mind to
+    do that.
+  `,
+);
+</script>

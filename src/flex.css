@@ -1,0 +1,57 @@
+.hlt, .hlm, .hlb, .hls, .hlbf, .hlbl, .hct, .hcm, .hcb, .hcs, .hcbf, .hcbl,
+.hrt, .hrm, .hrb, .hrs, .hrbf, .hrbl, .hst, .hsm, .hsb, .hss, .hsbf, .hsbl,
+.h_at, .h_am, .h_ab, .h_as, .h_abf, .h_abl, .h_bt, .h_bm, .h_bb, .h_bs, .h_bbf,
+.h_bbl, .h_et, .h_em, .h_eb, .h_es, .h_ebf, .h_ebl, .vlt, .vlm, .vlb, .vls,
+.vl_a, .vl_b, .vl_e, .vct, .vcm, .vcb, .vcs, .vc_a, .vc_b, .vc_e, .vrt, .vrm,
+.vrb, .vrs, .vr_a, .vr_b, .vr_e, .vst, .vsm, .vsb, .vss, .vs_a, .vs_b, .vs_e
+{ display: flex; }
+
+.hlt, .hct, .hrt, .hst, .h_at, .h_bt, .h_et, .vlt, .vlm, .vlb, .vls, .vl_a,
+.vl_b, .vl_e
+{ align-items: start; }
+
+.hlm, .hcm, .hrm, .hsm, .h_am, .h_bm, .h_em, .vct, .vcm, .vcb, .vcs, .vc_a,
+.vc_b, .vc_e
+{ align-items: center; }
+
+.hlb, .hcb, .hrb, .hsb, .h_ab, .h_bb, .h_eb, .vrt, .vrm, .vrb, .vrs, .vr_a,
+.vr_b, .vr_e
+{ align-items: end; }
+
+.hlbf, .hcbf, .hrbf, .hsbf, .h_abf, .h_bbf, .h_ebf
+{ align-items: first baseline; }
+
+.hlbl, .hcbl, .hrbl, .hsbl, .h_abl, .h_bbl, .h_ebl
+{ align-items: last baseline; }
+
+.hct, .hcm, .hcb, .hcs, .hcbf, .hcbl, .vlm, .vcm, .vrm, .vsm
+{ justify-content: center; }
+
+.hrt, .hrm, .hrb, .hrs, .hrbf, .hrbl, .vlb, .vcb, .vrb, .vsb
+{ justify-content: end; }
+
+.hst > *, .hsm > *, .hsb > *, .hss > *, .hsbf > *, .hsbl > *, .vls > *, .vcs >
+*, .vrs > *, .vss > *
+{ flex: auto; }
+
+.h_at, .h_am, .h_ab, .h_as, .h_abf, .h_abl, .vl_a, .vc_a, .vr_a, .vs_a
+{ justify-content: space-around; }
+
+.h_bt, .h_bm, .h_bb, .h_bs, .h_bbf, .h_bbl, .vl_b, .vc_b, .vr_b, .vs_b
+{ justify-content: space-between; }
+
+.h_et, .h_em, .h_eb, .h_es, .h_ebf, .h_ebl, .vl_e, .vc_e, .vr_e, .vs_e
+{ justify-content: space-evenly; }
+
+.vlt, .vlm, .vlb, .vls, .vl_a, .vl_b, .vl_e, .vct, .vcm, .vcb, .vcs, .vc_a,
+.vc_b, .vc_e, .vrt, .vrm, .vrb, .vrs, .vr_a, .vr_b, .vr_e, .vst, .vsm, .vsb,
+.vss, .vs_a, .vs_b, .vs_e
+{ flex-direction: column; }
+
+.fwr { flex-wrap: wrap; }
+.fl1 { flex: 1; }
+.fl2 { flex: 2; }
+.fl3 { flex: 3; }
+.fl4 { flex: 4; }
+.fl5 { flex: 5; }
+.fs0 { flex-shrink: 0; flex-basis: fit-content; }

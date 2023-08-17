@@ -1,0 +1,16 @@
+<body class="a b c" a="1" b="2">
+  <script type="module">
+    import { body, c, attr, on, prop, cls, css, hook, Val } from '../src/dom.js';
+    let v = Val(0);
+    body(
+      attr.x(1).a(3), // attrs are replaced
+      on.click(() => v(v()+1)),
+      prop.x(1),
+      cls.a(false).d, // classes are amended
+      css.backgroundColor`#ccc`,
+      c.H1`Hello`,
+      c(v),
+      hook.update(() => console.log('body.x=', document.body.x)),
+    );
+  </script>
+</body>

@@ -1,0 +1,19 @@
+{
+  "name": "frameorc",
+  "version": "0.90.0",
+  "description": "collection of libraries empowering web app development",
+  "dependencies": {
+    "ws": "^8.13.0"
+  },
+  "devDependencies": {
+    "mitata": "^0.1.6"
+  },
+  "scripts": {
+    "test": "bun test src"
+  },
+  "type": "module",
+  "keywords": [],
+  "author": "Michael Lazarev",
+  "license": "MIT",
+  "private": true
+}

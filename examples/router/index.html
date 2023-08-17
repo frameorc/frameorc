@@ -1,0 +1,35 @@
+<script type="module">
+  import { body, c, on, css, attr, key, prop, cls, hook } from 'https://frameorc.github.io/src/dom.js';
+  import { installOnHash, router, o2p, hrRoute } from '../../src/router.js';
+
+  const { H1, A, P, Span, Br } = c;
+
+  const Link = (text, name, args={}) => A(text, attr.href('#' + name + '#' + o2p(args)));
+  const WS = Span(' ');
+
+  const Main = hrRoute(args => c(
+    H1('Hello',),
+    Link('colors', 'colors', {background: 'red'}),
+    Br,
+    Link('protected', 'protected')
+  ));
+
+  const Colors = hrRoute(args => c(
+    H1('Colors page'),
+    Link('back', '', {}),
+    Br,
+    Link('red', 'colors', {background: 'red'}), WS,
+    Link('green', 'colors', {background: 'green'}), WS,
+    Link('blue', 'colors', {background: 'blue'}),
+    Br,
+    P('Color: ', args.background, css.color(args.background))
+  ));
+
+  installOnHash(router(body, {
+    pages: {
+      '': Main,
+      'colors': Colors
+    }
+  }));
+</script>
+

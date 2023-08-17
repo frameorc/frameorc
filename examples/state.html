@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script type="module">
+import { body, c, css, cls, attr, on, Ref, prop } from '../src/dom.js';
+import { State } from '../src/state/ls.js';
+
+const link = (v) => [prop.value(v), on.input(e => v(e.target.value))];
+
+let s = await State('frameorc-state-demo'); s.data ??= {};
+let saved = true, resetSaved = () => saved = false,
+    a = Ref(s.data, 'a').on(resetSaved),
+    b = Ref(s.data, 'b').on(resetSaved);
+body(
+  'State: ', () => JSON.stringify(s.data), () => !saved && ' (not saved)',
+  c.Form(
+    on.submit(async (e) => {
+      e.preventDefault();
+      await s.save(0);
+      saved = true;
+      body.refresh();
+    }),
+    c('a: ', c.Input(link(a), attr.autofocus(''))),
+    c('b: ', c.Input(link(b))),
+    c(c.Button('Save')),
+  ));
+</script>
