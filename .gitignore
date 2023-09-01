@@ -3,3 +3,4 @@ bun.lockb
 TODO
 doc/_snippets
 doc/_draft*
+package-lock.json
