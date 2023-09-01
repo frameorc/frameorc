@@ -1,0 +1,20 @@
+{
+  "name": "oneliner",
+  "version": "0.90.0",
+  "description": "The library that makes it possible to express the bolierplate in one line and proceed to writing code that matters",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Michael Lazarev",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "morgan": "^1.10.0",
+    "ws": "^8.13.0"
+  }
+}

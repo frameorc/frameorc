@@ -1,0 +1,7 @@
+<script type="module">
+  import { RpcClient } from '/src/rpc/client.js';
+  let client = RpcClient('/api');
+  await client.call('setUid', 456);
+  console.log(await client.call('getUid'));
+  // client.close();
+</script>
