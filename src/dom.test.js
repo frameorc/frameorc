@@ -18,7 +18,7 @@ const Element = (tag, classes, ...children) => {
 
 function render(fn) {
   let el = { children: [] };
-  complete(fn, el);
+  complete(fn, el)(el);
   return el.children[0];
 }
 

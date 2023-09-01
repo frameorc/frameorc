@@ -14,7 +14,8 @@ function append(child, el, ctx) {
   if (child === undefined || child === null || child === false) {}
   else if (Array.isArray(child)) { child.forEach(c => append(c, el, ctx)); }
   else if (typeof child === 'function') {
-    if (Builder.is(child)) { Builder.complete(child, el, ctx); }
+    if (Builder.is(child)) { append(Builder.complete(child), el, ctx); }
+    else if (operator.is(child)) { child(el, ctx); }
     else { append(child(), el, ctx); }
   } else if (child instanceof VNode) { el.children.push(child); }
   else { el.children.push({ text: String(child) }); }    
@@ -27,7 +28,7 @@ const kebab = s => s.replaceAll(
 
 const NS_SVG = 'http://www.w3.org/2000/svg';
 
-export const c = Builder((tasks, parent, ctx={}) => {
+export const c = Builder(tasks => operator((parent, ctx={}) => {
   let result = new VNode("div", {}, []);
   for (let { names } of tasks) {
     for (let name of names) {
@@ -47,9 +48,9 @@ export const c = Builder((tasks, parent, ctx={}) => {
   ctx.ns = prevNamespace;
   // operator effect
   parent.children.push(result);
-});
+}));
 
-export const frag = Builder((tasks, parent, ctx={}) => {
+export const frag = Builder(tasks => operator((parent, ctx={}) => {
   let result = new VNode(undefined, {}, []);
   // adding children
   for (let { args } of tasks)
@@ -57,9 +58,16 @@ export const frag = Builder((tasks, parent, ctx={}) => {
       append(child, result, ctx);
   // operator effect
   parent.children.push(result);
-});
+}));
 
 // OPERATORS
+
+const IS_OPERATOR = Symbol('FRAMEORC_OPERATOR');
+export function operator(f) {
+  f[IS_OPERATOR] = true;
+  return f;
+}
+operator.is = f => Object.hasOwn(f, IS_OPERATOR);
 
 export const unwrap = (x) => (typeof x === 'function') ? unwrap(x()) : x;
 
@@ -70,19 +78,15 @@ function unfoldToString(x) {
     return String(x);
 }
 
-export function operator(f) {
-  return Builder((_, ...args) => f(...args));
-}
-
 export const key = (...args) =>
   operator((el, ctx) => el.key = el.data.key = unfoldToString(args));
-export const on = Builder((tasks, el, ctx) => {
+export const on = Builder(tasks => operator((el, ctx) => {
   let evts = el.data.on ??= {};
   for (let {names, args} of tasks)
     for (let name of names)
      (evts[name] ??= []).push(...args);
-});
-export const hook = Builder((tasks, el, ctx) => {
+}));
+export const hook = Builder(tasks => operator((el, ctx) => {
   let hooks = el.data.hook ??= {};
   for (let {names, args} of tasks)
     for (let name of names) {
@@ -93,8 +97,8 @@ export const hook = Builder((tasks, el, ctx) => {
           args.forEach(f => f(...a));
         };
     }
-});
-export const cls = Builder((tasks, el, ctx) => {
+}));
+export const cls = Builder(tasks => operator((el, ctx) => {
   let classes = el.data.classes ??= new Set();
   for (let { names, args } of tasks) {
     if (!args.length || args.some(x => unwrap(x))) {
@@ -103,8 +107,8 @@ export const cls = Builder((tasks, el, ctx) => {
       names.forEach(n => classes.delete(kebab(n)));
     }    
   }
-});
-export const prop = Builder((tasks, el, ctx) => {
+}));
+export const prop = Builder(tasks => operator((el, ctx) => {
   let props = el.data.props ??= {};
   for (let { names, args, templateCall } of tasks)
     for (let name of names)
@@ -112,20 +116,20 @@ export const prop = Builder((tasks, el, ctx) => {
         templateCall ? unfoldToString(args)
         : args.length === 1  ? unwrap(args[0])
                              : args.map(unwrap);
-});
-export const css = Builder((tasks, el, ctx) => {
+}));
+export const css = Builder(tasks => operator((el, ctx) => {
   let styles = el.data.style ??= {};
   for (let {names, args} of tasks)
     for (let name of names)
       styles[kebab(name)] = unfoldToString(args);
-});
-export const attr = Builder((tasks, el, ctx) => {
+}));
+export const attr = Builder(tasks => operator((el, ctx) => {
   let attrs;
   for (let { names, args, templateCall } of tasks)
     for (let name of names)
       if (templateCall || ((args[0] = unwrap(args[0])) !== false))
          (attrs ??= el.data.attrs ??= {})[name] = unfoldToString(args);
-});
+}));
 
 // RENDERING
 
