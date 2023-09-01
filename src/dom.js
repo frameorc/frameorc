@@ -25,19 +25,6 @@ const kebab = s => s.replaceAll(
     (char, pos) => (pos !== 0 ? '-' : '') + char.toLowerCase()
   ).replace(/^_/, '-');
 
-export const isTemplateCall = args =>
-  Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
-
-function mixWithTemplate(args) {
-  if (!isTemplateCall(args)) return args;
-  let i = 0, result = [];
-  for (let part of args[0]) {
-    result.push(part);
-    if (++i < args.length) result.push(args[i]);
-  }
-  return result;
-}
-
 const NS_SVG = 'http://www.w3.org/2000/svg';
 
 export const c = Builder((tasks, parent, ctx={}) => {
@@ -54,7 +41,7 @@ export const c = Builder((tasks, parent, ctx={}) => {
   if (ctx.ns !== undefined) result.data.ns = ctx.ns;
   // adding children
   for (let { args } of tasks)
-    for (let child of mixWithTemplate(args))
+    for (let child of args)
       append(child, result, ctx);
   // restoring the namespace
   ctx.ns = prevNamespace;
@@ -66,7 +53,7 @@ export const frag = Builder((tasks, parent, ctx={}) => {
   let result = new VNode(undefined, {}, []);
   // adding children
   for (let { args } of tasks)
-    for (let child of mixWithTemplate(args))
+    for (let child of args)
       append(child, result, ctx);
   // operator effect
   parent.children.push(result);
@@ -83,14 +70,12 @@ function unfoldToString(x) {
     return String(x);
 }
 
-const argsToString = args => unfoldToString(mixWithTemplate(args));
-
 export function operator(f) {
   return Builder((_, ...args) => f(...args));
 }
 
 export const key = (...args) =>
-  operator((el, ctx) => el.key = el.data.key = argsToString(args));
+  operator((el, ctx) => el.key = el.data.key = unfoldToString(args));
 export const on = Builder((tasks, el, ctx) => {
   let evts = el.data.on ??= {};
   for (let {names, args} of tasks)
@@ -121,10 +106,10 @@ export const cls = Builder((tasks, el, ctx) => {
 });
 export const prop = Builder((tasks, el, ctx) => {
   let props = el.data.props ??= {};
-  for (let {names, args} of tasks)
+  for (let { names, args, templateCall } of tasks)
     for (let name of names)
       props[name] =
-        isTemplateCall(args) ? argsToString(args)
+        templateCall ? unfoldToString(args)
         : args.length === 1  ? unwrap(args[0])
                              : args.map(unwrap);
 });
@@ -132,14 +117,14 @@ export const css = Builder((tasks, el, ctx) => {
   let styles = el.data.style ??= {};
   for (let {names, args} of tasks)
     for (let name of names)
-      styles[kebab(name)] = argsToString(args);
+      styles[kebab(name)] = unfoldToString(args);
 });
 export const attr = Builder((tasks, el, ctx) => {
   let attrs;
-  for (let {names, args} of tasks)
+  for (let { names, args, templateCall } of tasks)
     for (let name of names)
-      if (isTemplateCall(args) || false !== (args[0] = unwrap(args[0])))
-         (attrs ??= el.data.attrs ??= {})[name] = argsToString(args);
+      if (templateCall || ((args[0] = unwrap(args[0])) !== false))
+         (attrs ??= el.data.attrs ??= {})[name] = unfoldToString(args);
 });
 
 // RENDERING
