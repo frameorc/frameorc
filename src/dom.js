@@ -149,20 +149,21 @@ export function throttle(f) {
 }
 
 export function attach(el) {
-  let vEl, content = [], refresh = throttle(() => {
-    let view = new VNode(el.tagName, {}, []);
-    view.data.classes = new Set(el.getAttribute?.("class")?.split(" "));
-    let ctx = {};
-    content.forEach(element => append(element, view, ctx));
+  let content = [], self = (...args) => { // setter only
+    content = args;
+    return refresh();
+  };
+  let vEl, refresh = throttle(() => {
+    let view = new VNode(el.tagName, {
+      classes: new Set(el.getAttribute?.("class")?.split(" ")),
+    }, []);
+    content.forEach(element => append(element, view, { container: self }));
     vEl = patch(vEl ?? el, view);
   });
   const refreshHandler = postOrder((v) => { refresh(); return v; });
   let Val = (v) => rVal(v).add(refreshHandler);
   let Ref = (obj, name) => rRef(obj, name).add(refreshHandler);
-  return Object.assign((...args) => { // setter only
-    content = args;
-    return refresh();
-  }, { Val, Ref, refresh });
+  return Object.assign(self, { Val, Ref, refresh });
 }
 
 export const body = attach(globalThis.document?.body);
