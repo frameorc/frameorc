@@ -1,8 +1,8 @@
-// frameorc dom, edition 20230715
+// frameorc dom, edition 20230901
 // MIT License
 // (c) 2015­-2023 Michael Lazarev
 
-import { Builder, launch, isBuilder } from './builder.js';
+import Builder from './builder.js';
 import { rVal, rRef, postOrder } from './chain.js';
 import { patch, VNode } from './snabb.js';
 
@@ -14,7 +14,7 @@ function append(child, el, ctx) {
   if (child === undefined || child === null || child === false) {}
   else if (Array.isArray(child)) { child.forEach(c => append(c, el, ctx)); }
   else if (typeof child === 'function') {
-    if (isBuilder(child)) { launch(child, el, ctx); }
+    if (Builder.is(child)) { Builder.complete(child, el, ctx); }
     else { append(child(), el, ctx); }
   } else if (child instanceof VNode) { el.children.push(child); }
   else { el.children.push({ text: String(child) }); }    

@@ -42,6 +42,6 @@ This allows us to create a builder, and then take its properties and call it wit
 any arguments any number of times, and in any combinations of property accesses
 and calls.
 
-Finally, there is a function `render` which calls the function stored in the
+Finally, there is a function `complete` which calls the function stored in the
 builder with the data of all property accesses and calls.
 

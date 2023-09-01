@@ -1,14 +1,3 @@
-const FRAMEORC_BUILDER = Symbol('FRAMEORC_BUILDER');
-
-export function isBuilder(f) {
-  return Object.hasOwn(f, FRAMEORC_BUILDER);
-}
-
-function builder(f) {
-  f[FRAMEORC_BUILDER] = true;
-  return f;
-}
-
 const isTemplateCall = args =>
   Array.isArray(args[0]) && Object.hasOwn(args[0], 'raw');
 
@@ -21,20 +10,39 @@ function mixWithTemplate(args) {
   return result;
 }
 
-export function Builder(effect, tasks=[], names=[]) {
-  return new Proxy(builder((...args) => {
-    if (args[0] === FRAMEORC_BUILDER)
-      return effect([...tasks, { names, args: [] }], ...args.slice(1));
-    let templateCall = isTemplateCall(args);
-    if (templateCall) args = mixWithTemplate(args);
-    let task = { names, args, templateCall };
-    return Builder(effect, [...tasks, task], []);
-  }), {
-    get: (_object, name, _proxy) => Builder(effect, tasks, [...names, name]),
-  });
+export function Builder(effect) {
+  function builder(tasks=[], names=[]) {
+    function func(...args) {
+      let templateCall = isTemplateCall(args);
+      if (templateCall) args = mixWithTemplate(args);
+      let task = { names, args, templateCall };
+      return builder([...tasks, task], []);
+    };
+    func[Builder.symbol] = true;
+    return new Proxy(func, {
+      get: (_object, name, _proxy) => (name === Builder.symbol) ? ({
+        effect,
+        tasks: [...tasks, { names, args: [], templateCall: false }],
+      }) : builder(tasks, [...names, name])
+    });
+  }
+  return builder();
 }
 
-export function launch(construct, ...args) {
-  return construct(FRAMEORC_BUILDER, ...args);
+export function inspect(construct) {
+  return construct[Builder.symbol];
 }
+
+export function complete(construct, ...args) {
+  let { effect, tasks } = inspect(construct);
+  return effect(tasks, ...args);
+}
+
+const FRAMEORC_BUILDER = Symbol('FRAMEORC_BUILDER');
+Builder.symbol = FRAMEORC_BUILDER;
+const isBuilder = f => Object.hasOwn(f, FRAMEORC_BUILDER);
+Builder.is = isBuilder;
+Builder.complete = complete;
+Builder.inspect = inspect;
+export default Builder;
 

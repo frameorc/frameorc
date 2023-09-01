@@ -8,7 +8,7 @@ const assertEquals = (a, b) => expect(a).toEqual(b);
 
 import { attr, c, cls, css, hook, on, prop, Element as VNode } from "./dom.js";
 import { rRef, rVal } from './chain.js';
-import { launch } from './builder.js';
+import { complete } from './builder.js';
 
 const Element = (tag, classes, ...children) => {
   let result = new VNode(tag, { }, children);
@@ -18,7 +18,7 @@ const Element = (tag, classes, ...children) => {
 
 function render(fn) {
   let el = { children: [] };
-  launch(fn, el);
+  complete(fn, el);
   return el.children[0];
 }
 
@@ -167,6 +167,18 @@ test("fragments carrying modifiers", () => {
     ),
   );
 });
+
+test("diverging paths", () => {
+  let base = c.a.b(1, 2, 3).d;
+  let path1 = base.e.f(4, 5).g;
+  let path2 = base.g(6).h(7);
+  let path3 = base(8).i.j;
+  assertEquals(norm(render(base)), norm(Element("div", ["a", "b", "d"], "1", "2", "3")));
+  assertEquals(norm(render(path1)), norm(Element("div", ["a", "b", "d", "e", "f", "g"], "1", "2", "3", "4", "5")));
+  assertEquals(norm(render(path2)), norm(Element("div", ["a", "b", "d", "g", "h"], "1", "2", "3", "6", "7")));
+  assertEquals(norm(render(path3)), norm(Element("div", ["a", "b", "d", "i", "j"], "1", "2", "3", "8")));
+});
+
 
 compare("prop", c(prop.x("y")), elm({ props: { x: "y" } }));
 
