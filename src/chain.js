@@ -1,13 +1,13 @@
 const ORIGINAL = Symbol();
 
 export function inOrder(f) {
-  let result = (next, ...args) => { f(...args); next(...args); };
+  const result = (next, ...args) => { f(...args); next(...args); };
   result[ORIGINAL] = f;
   return result;
 }
 
 export function postOrder(f) {
-  let result = (next, ...args) => { next(...args); f(...args); };
+  const result = (next, ...args) => { next(...args); f(...args); };
   result[ORIGINAL] = f;
   return result;
 }
@@ -17,7 +17,7 @@ export function Chain() {
   function makeNext(pos = 0, hs = handlers ??= Array.from(handlersMap.values())) {
     return (...args) => hs[pos]?.(makeNext(pos+1, hs), ...args);
   }
-  let trigger = (...args) => makeNext()(...args);
+  const trigger = (...args) => makeNext()(...args);
   const change = func => (...hs) => {
     for (let h of hs) func(h);
     handlers = undefined;

@@ -13,9 +13,9 @@ function mixWithTemplate(args) {
 export function Builder(effect) {
   function builder(tasks=[], names=[]) {
     function func(...args) {
-      let templateCall = isTemplateCall(args);
+      const templateCall = isTemplateCall(args);
       if (templateCall) args = mixWithTemplate(args);
-      let task = { names, args, templateCall };
+      const task = { names, args, templateCall };
       return builder([...tasks, task], []);
     };
     func[Builder.symbol] = true;
@@ -34,7 +34,7 @@ export function inspect(construct) {
 }
 
 export function complete(construct, ...args) {
-  let { effect, tasks } = inspect(construct);
+  const { effect, tasks } = inspect(construct);
   return effect(tasks, ...args);
 }
 

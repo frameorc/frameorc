@@ -21,6 +21,9 @@ function append(child, el, ctx) {
   else { el.children.push({ text: String(child) }); }    
 }
 
+const appendAll = (collection, view, ctx) => collection.forEach(element =>
+  append(element, view, ctx));
+
 const kebab = s => s.replaceAll(
     /[A-Z]/g,
     (char, pos) => (pos !== 0 ? '-' : '') + char.toLowerCase()
@@ -29,7 +32,7 @@ const kebab = s => s.replaceAll(
 const NS_SVG = 'http://www.w3.org/2000/svg';
 
 export const c = Builder(tasks => operator((parent, ctx={}) => {
-  let result = new VNode("div", {}, []);
+  const result = new VNode("div", {}, []);
   for (let { names } of tasks) {
     for (let name of names) {
       if (name.match(/^[A-Z]/)) result.sel = kebab(name);        
@@ -37,13 +40,11 @@ export const c = Builder(tasks => operator((parent, ctx={}) => {
     }
   }
   // saving/determining namespace
-  let prevNamespace = ctx.ns;
+  const prevNamespace = ctx.ns;
   if (result.sel === 'svg') ctx.ns = NS_SVG;
   if (ctx.ns !== undefined) result.data.ns = ctx.ns;
   // adding children
-  for (let { args } of tasks)
-    for (let child of args)
-      append(child, result, ctx);
+  for (let { args } of tasks) appendAll(args, result, ctx);
   // restoring the namespace
   ctx.ns = prevNamespace;
   // operator effect
@@ -51,12 +52,8 @@ export const c = Builder(tasks => operator((parent, ctx={}) => {
 }));
 
 export const frag = Builder(tasks => operator((parent, ctx={}) => {
-  let result = new VNode(undefined, {}, []);
-  // adding children
-  for (let { args } of tasks)
-    for (let child of args)
-      append(child, result, ctx);
-  // operator effect
+  const result = new VNode(undefined, {}, []);
+  for (let { args } of tasks) appendAll(args, result, ctx);
   parent.children.push(result);
 }));
 
@@ -81,13 +78,13 @@ function unfoldToString(x) {
 export const key = (...args) =>
   operator((el, ctx) => el.key = el.data.key = unfoldToString(args));
 export const on = Builder(tasks => operator((el, ctx) => {
-  let evts = el.data.on ??= {};
+  const evts = el.data.on ??= {};
   for (let {names, args} of tasks)
     for (let name of names)
      (evts[name] ??= []).push(...args);
 }));
 export const hook = Builder(tasks => operator((el, ctx) => {
-  let hooks = el.data.hook ??= {};
+  const hooks = el.data.hook ??= {};
   for (let {names, args} of tasks)
     for (let name of names) {
       let oldHook = hooks[name];
@@ -99,7 +96,7 @@ export const hook = Builder(tasks => operator((el, ctx) => {
     }
 }));
 export const cls = Builder(tasks => operator((el, ctx) => {
-  let classes = el.data.classes ??= new Set();
+  const classes = el.data.classes ??= new Set();
   for (let { names, args } of tasks) {
     if (!args.length || args.some(x => unwrap(x))) {
       names.forEach(n => classes.add(kebab(n)));
@@ -109,7 +106,7 @@ export const cls = Builder(tasks => operator((el, ctx) => {
   }
 }));
 export const prop = Builder(tasks => operator((el, ctx) => {
-  let props = el.data.props ??= {};
+  const props = el.data.props ??= {};
   for (let { names, args, templateCall } of tasks)
     for (let name of names)
       props[name] =
@@ -118,8 +115,8 @@ export const prop = Builder(tasks => operator((el, ctx) => {
                              : args.map(unwrap);
 }));
 export const css = Builder(tasks => operator((el, ctx) => {
-  let styles = el.data.style ??= {};
-  for (let {names, args} of tasks)
+  const styles = el.data.style ??= {};
+  for (let { names, args } of tasks)
     for (let name of names)
       styles[kebab(name)] = unfoldToString(args);
 }));
@@ -134,25 +131,32 @@ export const attr = Builder(tasks => operator((el, ctx) => {
 // RENDERING
 
 export function throttle(f) {
-  let p; return () => (p ??= Promise.resolve().then(() => p = null).then(f));
+  let p;
+  return function throttled() {
+    p ??= Promise.resolve().then(() => {
+      p = undefined;
+      return f();
+    });
+  }
 }
 
 export function attach(el) {
-  let content = [], self = (...args) => { // setter only
+  let content = [], vEl;
+  function setContent(...args) {
     content = args;
     return refresh();
   };
-  let vEl, refresh = throttle(() => {
+  const refresh = throttle(function refreshBase() {
     let view = new VNode(el.tagName, {
       classes: new Set(el.getAttribute?.("class")?.split(" ")),
     }, []);
-    content.forEach(element => append(element, view, { container: self }));
+    appendAll(content, view, { container: setContent });
     vEl = patch(vEl ?? el, view);
   });
   const refreshHandler = postOrder((v) => { refresh(); return v; });
-  let Val = (v) => rVal(v).add(refreshHandler);
-  let Ref = (obj, name) => rRef(obj, name).add(refreshHandler);
-  return Object.assign(self, { Val, Ref, refresh });
+  const Val = (v) => rVal(v).add(refreshHandler);
+  const Ref = (obj, name) => rRef(obj, name).add(refreshHandler);
+  return Object.assign(setContent, { Val, Ref, refresh });
 }
 
 export const body = attach(globalThis.document?.body);
