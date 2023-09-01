@@ -82,7 +82,7 @@ export function RpcServer({ PULSE = 60_000 } = {}) {
   upgrade.all = new Set();
   upgrade.methods = {};
   upgrade.close = () => {
-    return Promise.all(
+    return Promise.allSettled(
       Array.from(upgrade.all.values())
         .map((c) => c.close()));
   }
