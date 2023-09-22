@@ -1,7 +1,10 @@
-import { parse } from 'url';
+import { parse } from 'node:url';
+import process from 'node:process';
+
 import express from 'express';
 import morgan from 'morgan';
 import cors from 'cors';
+
 import { WebSocketServer } from 'ws';
 import { RpcServer } from '../rpc/server.js';
 
