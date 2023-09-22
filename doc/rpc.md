@@ -51,12 +51,14 @@ peer, the code is `let result = await conn.call('method name', ...args)`.
 Sometimes, when the goal is just to notify the peer about some event, and its
 response is not required, `cast` is used: `conn.cast('event', ...args)`.
 
-**The specifics of the client** is that if the connection to the server has not
+# The specifics of the client
+
+The specifics of the client is that if the connection to the server has not
 been previously established, or is currently lost, it will attempt to connect
 upon the execution of `call` and `cast`.
 
-By installing the `.onConnect.on((state) => state === true && ...)` handler,
-one can perform some actions before the awaiting `call`s are executed. For
+By installing the `.isOpen.on((state) => state === true && ...)` handler on the
+client, one can perform some actions before the awaiting `call`s are executed. For
 example, that can be a preflight authentication request. The most frequent case
 is to establish the client ID. A library function `assignUid` is provided on the
 client to perform that task.
@@ -103,7 +105,7 @@ Apart from `.methods`, `RpcServer` instance has `.close()`, `.all` Set containin
 all the connected clients, and optionally, `.onOpen(instance)` and
 `.onClose(instance)`, which are only called when defined.
 
-The instance is an object corresponding to the connected client. ts is passed to
+The instance is an object corresponding to the connected client. It is passed to
 `.onOpen` and `.onClose` when they are defined, it is accessible from the `.all`
 Set, and in methods called by the client, it is accessible as `this` variable.
 
