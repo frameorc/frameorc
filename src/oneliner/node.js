@@ -62,7 +62,7 @@ export function Oneliner() {
     },
     listen({ hostname = process.env.HOST, port = process.env.PORT, signal, reusePort = true, onListen = report, ...options }={}) {
       return closePromise ??= new Promise(resolve => {
-        signal.addEventListener('abort', () => {
+        signal?.addEventListener('abort', () => {
           Promise
             .allSettled(Array.from(Object.values(wss)).map(g => g.upgrade.close()));
         });
